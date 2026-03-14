@@ -75,10 +75,4 @@ This project is ready for **Hugging Face Spaces**.
 -   `static/`: Frontend assets (HTML, CSS, JS) for the web version.
 -   `.env`: Local environment variables (Git ignored).
 
----
 
-## 🤝 Contributing
-Feel free to fork this project and submit pull requests for new features, bug fixes, or UI enhancements!
-
-## 📄 License
-This project is open-source and available under the MIT License.
