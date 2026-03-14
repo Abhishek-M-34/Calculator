@@ -10,16 +10,10 @@ Features:
 """
 
 import customtkinter as ctk
-import math
 import threading
 from datetime import datetime
 
-# ── Groq SDK ──────────────────────────────────────────────────────────────────
-try:
-    from groq import Groq
-    GROQ_AVAILABLE = True
-except ImportError:
-    GROQ_AVAILABLE = False
+from calculator_core import evaluate_expression, groq_math_query, GROQ_AVAILABLE
 
 # ── Theme ─────────────────────────────────────────────────────────────────────
 ctk.set_appearance_mode("dark")
@@ -62,23 +56,8 @@ C = {
 }
 
 
-# ── Safe math evaluator ───────────────────────────────────────────────────────
-_SAFE_NS = {
-    k: getattr(math, k)
-    for k in dir(math) if not k.startswith("_")
-}
-_SAFE_NS.update({"abs": abs, "round": round, "pow": pow})
-
-def safe_eval(expr: str):
-    """Evaluate a math expression safely without exec/eval on untrusted strings."""
-    # Replace display aliases
-    expr = (expr
-            .replace("÷", "/")
-            .replace("×", "*")
-            .replace("−", "-")
-            .replace("π", str(math.pi))
-            .replace("^", "**"))
-    return eval(expr, {"__builtins__": {}}, _SAFE_NS)   # noqa: S307
+# Math evaluation is delegated to calculator_core.evaluate_expression.
+# That module also contains the Groq helper used by the AI mode.
 
 
 # ── Main Application ──────────────────────────────────────────────────────────
@@ -96,7 +75,7 @@ class SmartCalculator(ctk.CTk):
         self.just_evaled  = False
         self.history: list[str] = []
         self.mode         = "standard"   # standard | scientific | ai
-        self.groq_client  = None
+        self.groq_key     = None
         self.ai_connected = False
 
         # ── Widgets ───────────────────────────────────────────────────────────
@@ -412,16 +391,12 @@ class SmartCalculator(ctk.CTk):
             return
 
         try:
-            self.groq_client = Groq(api_key=key)
-            # Quick test call
-            raw_resp = self.groq_client.chat.completions.with_raw_response.create(
-                model="llama-3.3-70b-versatile",
-                messages=[{"role": "user", "content": "ping"}],
-                max_tokens=5
-            )
+            # Simple validation via a quick math query
+            resp = groq_math_query("1+1", api_key=key)
+            self.groq_key = key
             self.ai_connected = True
-            
-            reqs = raw_resp.headers.get("x-ratelimit-remaining-requests-today") or raw_resp.headers.get("x-ratelimit-remaining-requests", "Unknown")
+
+            reqs = resp.get("remaining_requests", "Unknown")
             self._ai_status.configure(
                 text=f"● Connected ✓  Llama‑3.3‑70B via Groq  ({reqs} reqs left)",
                 text_color=C["green"]
@@ -450,30 +425,12 @@ class SmartCalculator(ctk.CTk):
         threading.Thread(target=self._groq_query, args=(q,), daemon=True).start()
 
     def _groq_query(self, question: str):
-        SYSTEM = (
-            "You are a concise math assistant embedded in a calculator app. "
-            "When the user asks a math or calculation question, show the result clearly. "
-            "If applicable, also show the formula or steps briefly. "
-            "Keep answers short (≤6 lines). Use plain text, no markdown headers."
-        )
         try:
-            raw_resp = self.groq_client.chat.completions.with_raw_response.create(
-                model="llama-3.3-70b-versatile",
-                messages=[
-                    {"role": "system",  "content": SYSTEM},
-                    {"role": "user",    "content": question},
-                ],
-                max_tokens=400,
-                temperature=0.3,
-            )
-            parsed_resp = raw_resp.parse()
-            answer = parsed_resp.choices[0].message.content.strip()
-            
-            # Update bracket requests
-            reqs = raw_resp.headers.get("x-ratelimit-remaining-requests-today") or raw_resp.headers.get("x-ratelimit-remaining-requests", "Unknown")
+            resp = groq_math_query(question, api_key=self.groq_key)
+            answer = resp.get("answer", "(no response)")
+            reqs = resp.get("remaining_requests", "Unknown")
             msg = f"● Connected ✓  Llama‑3.3‑70B via Groq  ({reqs} reqs left)"
             self.after(0, lambda: self._ai_status.configure(text=msg, text_color=C["green"]))
-            
         except Exception as ex:
             answer = f"Error: {ex}"
 
@@ -525,48 +482,38 @@ class SmartCalculator(ctk.CTk):
         self._set_display(self.expression)
 
     def _evaluate(self):
-        if self.mode == "ai": return
+        if self.mode == "ai":
+            return
+
         expr = self.expression.strip()
         if not expr:
             return
-            
-        # ── Auto-close brackets ──
-        open_brackets = expr.count('(')
-        close_brackets = expr.count(')')
-        if open_brackets > close_brackets:
-            expr += ")" * (open_brackets - close_brackets)
-            self.expression = expr
-            self.expr_lbl.configure(text=self.expression[-34:])
-            self._set_display(self.expression)
-            
-        try:
-            result = safe_eval(expr)
-            if isinstance(result, float):
-                result = round(result, 10)
-                if result == int(result):
-                    result = int(result)
-            result_str = str(result)
 
-            # History
-            record = f"{expr} = {result_str}"
-            self.history.append(record)
-            if len(self.history) > 10:
-                self.history.pop(0)
-            self.hist_lbl.configure(text=record[-40:])
-
-            self.expr_lbl.configure(text=f"{expr}  =")
-            self._set_display(result_str)
-            self.expression = result_str
-            self.just_evaled = True
-
-        except ZeroDivisionError:
-            self._set_display("÷ by zero")
+        res = evaluate_expression(expr)
+        if "error" in res:
+            err = res["error"]
+            if "Division by zero" in err:
+                self._set_display("÷ by zero")
+            else:
+                self._set_display("Syntax error")
             self.expression = ""
             self.just_evaled = True
-        except Exception:
-            self._set_display("Syntax error")
-            self.expression = ""
-            self.just_evaled = True
+            return
+
+        result = res["result"]
+        result_str = str(result)
+
+        # History
+        record = f"{expr} = {result_str}"
+        self.history.append(record)
+        if len(self.history) > 10:
+            self.history.pop(0)
+        self.hist_lbl.configure(text=record[-40:])
+
+        self.expr_lbl.configure(text=f"{expr}  =")
+        self._set_display(result_str)
+        self.expression = result_str
+        self.just_evaled = True
 
     def _ac(self):
         if self.mode == "ai": return
@@ -585,9 +532,13 @@ class SmartCalculator(ctk.CTk):
         self._set_display(self.expression or "0")
 
     def _percent(self):
-        if self.mode == "ai": return
+        if self.mode == "ai":
+            return
         try:
-            val = float(safe_eval(self.expression))
+            res = evaluate_expression(self.expression)
+            if "result" not in res:
+                return
+            val = float(res["result"])
             self.expression = str(val / 100)
             self._set_display(self.expression)
         except Exception:

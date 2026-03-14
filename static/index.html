@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Calculator</title>
+  <style>
+    :root {
+      --bg: #0d0d1a;
+      --panel: #13132b;
+      --border: #2d2d5a;
+      --text: #e8e8f8;
+      --muted: #64648a;
+      --accent: #7c3aed;
+      --accent2: #06b6d4;
+      --button: #1c1c38;
+      --button-hover: #26264a;
+      --button-op: #1e1045;
+      --button-op-hover: #2e1e60;
+      --button-eq: #5b21b6;
+      --button-eq-hover: #4c1d95;
+      --button-del: #0d2d1e;
+      --button-del-hover: #144d32;
+      --button-ac: #2d1010;
+      --button-ac-hover: #4a1818;
+      --button-sci: #0e2233;
+      --button-sci-hover: #193448;
+      --shadow: 0 12px 32px rgba(0,0,0,0.45);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #14142d 0%, var(--bg) 65%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .app {
+      width: min(520px, 100%);
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 18px 18px 12px;
+      border-radius: 16px;
+      background: rgba(15, 15, 29, 0.85);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      margin-bottom: 18px;
+
+    }
+
+    header h1 {
+      font-size: 1.4rem;
+      margin: 0;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+    }
+
+    header .clock {
+      color: var(--muted);
+      font-size: 0.95rem;
+      min-width: 70px;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .tab {
+      padding: 10px 0;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 120ms ease, color 120ms ease;
+    }
+
+    .tab.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .display {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px 16px;
+      background: rgba(14, 14, 27, 0.7);
+      margin-bottom: 18px;
+    }
+
+    .expr {
+      color: var(--muted);
+      font-size: 0.95rem;
+      min-height: 22px;
+      text-align: right;
+      word-break: break-all;
+    }
+
+    .result {
+      font-size: 2.4rem;
+      font-weight: 700;
+      text-align: right;
+      margin-top: 4px;
+      letter-spacing: 0.5px;
+      min-height: 48px;
+      word-break: break-word;
+    }
+
+    .history {
+      margin-top: 10px;
+      font-size: 0.85rem;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .history button {
+      border: none;
+      background: transparent;
+      color: var(--accent2);
+      cursor: pointer;
+      font-size: 0.85rem;
+      padding: 4px 6px;
+      border-radius: 10px;
+      transition: background 120ms ease;
+    }
+
+    .history button:hover {
+      background: rgba(255,255,255,0.07);
+    }
+
+    .pad {
+      display: none;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .pad.visible {
+      display: grid;
+    }
+
+    .pad button {
+      border: 1px solid transparent;
+      border-radius: 16px;
+      height: 52px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      background: var(--button);
+      color: var(--text);
+      cursor: pointer;
+      transition: transform 80ms ease, background 120ms ease;
+      box-shadow: inset 0 -1px 0 rgba(0,0,0,0.2);
+    }
+
+    .pad button:active {
+      transform: translateY(1px);
+    }
+
+    .pad button:hover {
+      background: var(--button-hover);
+    }
+
+    .pad button.op { background: var(--button-op); }
+    .pad button.op:hover { background: var(--button-op-hover); }
+    .pad button.eq { background: var(--button-eq); }
+    .pad button.eq:hover { background: var(--button-eq-hover); }
+    .pad button.del { background: var(--button-del); }
+    .pad button.del:hover { background: var(--button-del-hover); }
+    .pad button.ac { background: var(--button-ac); }
+    .pad button.ac:hover { background: var(--button-ac-hover); }
+    .pad button.sci { background: var(--button-sci); }
+    .pad button.sci:hover { background: var(--button-sci-hover); }
+
+    .hidden {
+      display: none;
+    }
+
+    .ai-panel {
+      display: none;
+      gap: 12px;
+    }
+
+    .ai-header {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .ai-modes {
+      display: flex;
+      gap: 10px;
+    }
+
+    .ai-mode {
+      flex: 1;
+      padding: 10px 0;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.06);
+      color: var(--muted);
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 120ms ease, color 120ms ease;
+    }
+
+    .ai-mode.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .ai-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+      color: var(--muted);
+      flex-wrap: wrap;
+    }
+
+    .ai-status-dot {
+      color: var(--red);
+      font-size: 1.1rem;
+      line-height: 1;
+    }
+
+    .ai-status-text {
+      color: var(--muted);
+    }
+
+    .ai-remaining {
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+    }
+
+    .ai-remaining.green { background: rgba(34,197,94,0.18); color: #22c55e; }
+    .ai-remaining.yellow { background: rgba(250,204,21,0.2); color: #facc15; }
+    .ai-remaining.red { background: rgba(239,68,68,0.2); color: #ef4444; }
+    .ai-remaining.grey { background: rgba(148,163,184,0.2); color: #94a3b8; }
+
+    .ai-key {
+      display: flex;
+      gap: 10px;
+    }
+
+    .ai-key input {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 11px 12px;
+      background: rgba(0,0,0,0.15);
+      color: var(--text);
+      font-size: 1rem;
+    }
+
+    .ai-key button {
+      border-radius: 14px;
+      border: 1px solid rgba(124, 58, 237, 0.75);
+      background: var(--accent);
+      color: #fff;
+      font-weight: 700;
+      padding: 0 18px;
+      cursor: pointer;
+    }
+
+    .ai-chat {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(0,0,0,0.15);
+      padding: 12px;
+      min-height: 180px;
+      max-height: 240px;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .ai-msg {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .ai-msg.user {
+      justify-content: flex-end;
+    }
+
+    .ai-msg .bubble {
+      padding: 10px 12px;
+      border-radius: 16px;
+      max-width: 70%;
+      white-space: pre-wrap;
+      line-height: 1.35;
+    }
+
+    .ai-msg.user .bubble {
+      background: rgba(124, 58, 237, 0.9);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+
+    .ai-msg.bot .bubble {
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      border-bottom-left-radius: 4px;
+    }
+
+    .ai-input-row {
+      display: flex;
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .ai-input-row textarea {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      background: rgba(0,0,0,0.15);
+      color: var(--text);
+      font-size: 1rem;
+      resize: vertical;
+      min-height: 48px;
+    }
+
+    .ai-input-row button {
+      width: 120px;
+      border-radius: 14px;
+      border: 1px solid rgba(124, 58, 237, 0.75);
+      background: var(--accent);
+      font-weight: 700;
+      cursor: pointer;
+      color: #fff;
+    }
+
+    .ai-input-row button:disabled {
+      opacity: 0.55;
+      cursor: default;
+    }
+
+    .footer {
+      margin-top: 16px;
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .footer code {
+      background: rgba(255,255,255,0.06);
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>✦ Smart Calculator</h1>
+      <div class="clock" id="clock">--:--</div>
+    </header>
+
+    <div class="tabs">
+      <button class="tab active" data-mode="standard">⌨ Standard</button>
+      <button class="tab" data-mode="scientific">∫ Scientific</button>
+      <button class="tab" data-mode="ai">🤖 AI</button>
+    </div>
+
+    <div class="panel">
+      <div class="display">
+        <div class="expr" id="exprDisplay"></div>
+        <div class="result" id="resultDisplay">0</div>
+        <div class="history">
+          <span id="historyLabel">LAST:</span>
+          <button id="historyBtn" type="button">—</button>
+        </div>
+      </div>
+
+      <div class="pad" id="padStandard">
+        <button class="ac" data-action="ac">AC</button>
+        <button class="del" data-action="del">DEL</button>
+        <button class="op" data-value="(">(</button>
+        <button class="op" data-value=")">)</button>
+
+        <button data-value="7">7</button>
+        <button data-value="8">8</button>
+        <button data-value="9">9</button>
+        <button class="op" data-value="÷">÷</button>
+
+        <button data-value="4">4</button>
+        <button data-value="5">5</button>
+        <button data-value="6">6</button>
+        <button class="op" data-value="×">×</button>
+
+        <button data-value="1">1</button>
+        <button data-value="2">2</button>
+        <button data-value="3">3</button>
+        <button class="op" data-value="-">−</button>
+
+        <button data-value="0">0</button>
+        <button data-value=".">.</button>
+        <button class="eq" data-action="eval">=</button>
+        <button class="op" data-value="+">+</button>
+      </div>
+
+      <div class="pad hidden" id="padScientific">
+        <button class="sci" data-value="sin(">sin</button>
+        <button class="sci" data-value="cos(">cos</button>
+        <button class="sci" data-value="tan(">tan</button>
+        <button class="ac" data-action="ac">AC</button>
+
+        <button class="sci" data-value="log(">log</button>
+        <button class="sci" data-value="ln(">ln</button>
+        <button class="sci" data-value="sqrt(">√</button>
+        <button class="sci" data-value="^2">x²</button>
+
+        <button class="sci" data-value="^">xʸ</button>
+        <button class="sci" data-value="π">π</button>
+        <button class="sci" data-value="e">e</button>
+        <button class="op" data-value="%">%</button>
+
+        <button class="paren" data-value="(">(</button>
+        <button class="paren" data-value=")">)</button>
+        <button class="del" data-action="del">⌫</button>
+        <button class="op" data-value="÷">÷</button>
+
+        <button data-value="7">7</button>
+        <button data-value="8">8</button>
+        <button data-value="9">9</button>
+        <button class="op" data-value="×">×</button>
+
+        <button data-value="4">4</button>
+        <button data-value="5">5</button>
+        <button data-value="6">6</button>
+        <button class="op" data-value="−">−</button>
+
+        <button data-value="1">1</button>
+        <button data-value="2">2</button>
+        <button data-value="3">3</button>
+        <button class="op" data-value="+">+</button>
+
+        <button data-value="00">00</button>
+        <button data-value="0">0</button>
+        <button data-value=".">.</button>
+        <button class="eq" data-action="eval">=</button>
+      </div>
+
+      <div class="ai-panel hidden" id="aiPanel">
+        <div class="ai-header">
+          <div class="ai-modes">
+            <button type="button" id="modeBackend" class="ai-mode active">Backend</button>
+            <button type="button" id="modeKey" class="ai-mode">Own API</button>
+          </div>
+
+          <div class="ai-status" id="aiStatus">
+            <span class="ai-status-dot" id="aiStatusDot">●</span>
+            <span id="aiStatusText">Not connected — get a FREE key at console.groq.com</span>
+            <span id="aiRemaining" class="ai-remaining"></span>
+          </div>
+        </div>
+
+        <div class="ai-key" id="aiKeyRow">
+          <input id="apiKey" type="password" placeholder="Paste your Groq API key" autocomplete="off" />
+          <button id="connectBtn" type="button">Connect</button>
+        </div>
+
+        <div class="ai-chat" id="aiChat"></div>
+
+        <div class="ai-input-row">
+          <textarea id="question" placeholder="Ask something..." rows="2"></textarea>
+          <button id="aiBtn">Ask AI</button>
+        </div>
+      </div>
+
+      <div class="footer">
+        Tip: Run backend with <code>uvicorn server:app --reload</code> and open <code>http://localhost:8000/</code>.
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
