@@ -77,6 +77,7 @@ class SmartCalculator(ctk.CTk):
         self.mode         = "standard"   # standard | scientific | ai
         self.groq_key     = None
         self.ai_connected = False
+        self.units        = "deg"  # deg | rad
 
         # ── Widgets ───────────────────────────────────────────────────────────
         self._header()
@@ -250,7 +251,39 @@ class SmartCalculator(ctk.CTk):
             [("1",    "num"), ("2",    "num"), ("3",   "num"), ("+",   "op")],
             [("00",   "num"), ("0",    "num"), (".",   "num"), ("=",   "eq")],
         ]
-        self._render_pad(self._sci_frame, layout, btn_h=44)
+        
+        # Unit toggle frame
+        self.unit_frame = ctk.CTkFrame(self._sci_frame, fg_color="transparent")
+        self.unit_frame.pack(fill="x", padx=4, pady=(0, 4))
+        
+        self.deg_btn = ctk.CTkButton(
+            self.unit_frame, text="DEG", width=40, height=24, corner_radius=6,
+            command=lambda: self._set_units("deg"),
+            font=ctk.CTkFont("Segoe UI", 10, "bold"),
+            fg_color=C["accent"], text_color=C["txt_eq"]
+        )
+        self.deg_btn.pack(side="right", padx=2)
+        
+        self.rad_btn = ctk.CTkButton(
+            self.unit_frame, text="RAD", width=40, height=24, corner_radius=6,
+            command=lambda: self._set_units("rad"),
+            font=ctk.CTkFont("Segoe UI", 10, "bold"),
+            fg_color="transparent", text_color=C["txt_dim"]
+        )
+        self.rad_btn.pack(side="right", padx=2)
+
+        pad_f = ctk.CTkFrame(self._sci_frame, fg_color="transparent")
+        pad_f.pack(fill="both", expand=True)
+        self._render_pad(pad_f, layout, btn_h=44)
+
+    def _set_units(self, unit: str):
+        self.units = unit
+        if unit == "deg":
+            self.deg_btn.configure(fg_color=C["accent"], text_color=C["txt_eq"])
+            self.rad_btn.configure(fg_color="transparent", text_color=C["txt_dim"])
+        else:
+            self.rad_btn.configure(fg_color=C["accent"], text_color=C["txt_eq"])
+            self.deg_btn.configure(fg_color="transparent", text_color=C["txt_dim"])
 
     # ── shared renderer ───────────────────────────────────────────────────────
     _STYLE = {
@@ -489,7 +522,7 @@ class SmartCalculator(ctk.CTk):
         if not expr:
             return
 
-        res = evaluate_expression(expr)
+        res = evaluate_expression(expr, mode=self.units)
         if "error" in res:
             err = res["error"]
             if "Division by zero" in err:

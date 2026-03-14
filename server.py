@@ -36,6 +36,7 @@ def root():
 
 class CalcRequest(BaseModel):
     expr: str
+    mode: Optional[str] = 'deg'
 
 
 class AiRequest(BaseModel):
@@ -45,7 +46,7 @@ class AiRequest(BaseModel):
 
 @app.post("/api/calc")
 def calc(req: CalcRequest):
-    result = evaluate_expression(req.expr)
+    result = evaluate_expression(req.expr, mode=req.mode)
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])
     return result

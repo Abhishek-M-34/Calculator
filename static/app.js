@@ -34,6 +34,7 @@ const state = {
   aiMode: 'backend', // backend | key
   apiKey: '',
   remaining: null,
+  units: 'deg', // deg | rad
 };
 
 const formatHistoryLabel = () => {
@@ -193,7 +194,7 @@ const compute = async () => {
   setBusy(true);
 
   try {
-    const data = await jsonRequest('/api/calc', { expr });
+    const data = await jsonRequest('/api/calc', { expr, mode: state.units });
     state.result = String(data.result);
     pushHistory(expr, state.result);
   } catch (err) {
@@ -404,6 +405,18 @@ const init = () => {
   connectBtn.addEventListener('click', connectKey);
   modeBackendBtn.addEventListener('click', () => setAiMode('backend'));
   modeKeyBtn.addEventListener('click', () => setAiMode('key'));
+
+  const unitDegBtn = $('unitDeg');
+  const unitRadBtn = $('unitRad');
+
+  const setUnits = (u) => {
+    state.units = u;
+    unitDegBtn.classList.toggle('active', u === 'deg');
+    unitRadBtn.classList.toggle('active', u === 'rad');
+  };
+
+  unitDegBtn.addEventListener('click', () => setUnits('deg'));
+  unitRadBtn.addEventListener('click', () => setUnits('rad'));
 
   document.addEventListener('keydown', (event) => {
     // Ignore when typing in AI input fields

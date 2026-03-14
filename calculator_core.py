@@ -18,9 +18,24 @@ except Exception as e:
     GROQ_AVAILABLE = False
     GROQ_IMPORT_ERROR = f"Unexpected error: {str(e)}"
 
-# ── Safe math evaluator ───────────────────────────────────────────────────────
-_SAFE_NS = {k: getattr(math, k) for k in dir(math) if not k.startswith("_")}
-_SAFE_NS.update({"abs": abs, "round": round, "pow": pow})
+def get_safe_ns(mode='deg'):
+    """Get a safe namespace for evaluation, wrapping trig functions if in deg mode."""
+    ns = {k: getattr(math, k) for k in dir(math) if not k.startswith("_")}
+    ns.update({"abs": abs, "round": round, "pow": pow})
+
+    if mode == 'deg':
+        def sin_deg(x): return math.sin(math.radians(x))
+        def cos_deg(x): return math.cos(math.radians(x))
+        def tan_deg(x):
+            # Handle tan(90) which is undefined in degrees
+            # Due to float precision x % 180 == 90 is safest check
+            if abs(x % 180) == 90:
+                raise ValueError("Tangent is undefined for 90 or 270 degrees.")
+            return math.tan(math.radians(x))
+        
+        ns.update({"sin": sin_deg, "cos": cos_deg, "tan": tan_deg})
+    
+    return ns
 
 
 def normalize_expr(expr: str) -> str:
@@ -34,16 +49,18 @@ def normalize_expr(expr: str) -> str:
         .replace("π", str(math.pi))
         .replace("^", "**")
         .replace("ln(", "log(")
+        .replace("log(", "log10(") # Use log10 for 'log' in calculator context
     )
 
 
-def safe_eval(expr: str) -> Any:
+def safe_eval(expr: str, mode: str = 'deg') -> Any:
     """Evaluate a math expression safely without exposing builtins."""
     expr = normalize_expr(expr)
-    return eval(expr, {"__builtins__": {}}, _SAFE_NS)  # noqa: S307
+    safe_ns = get_safe_ns(mode)
+    return eval(expr, {"__builtins__": {}}, safe_ns)  # noqa: S307
 
 
-def evaluate_expression(expr: str) -> Dict[str, Any]:
+def evaluate_expression(expr: str, mode: str = 'deg') -> Dict[str, Any]:
     """Evaluate a math expression and return a standardized result dict."""
 
     expr = (expr or "").strip()
@@ -57,7 +74,7 @@ def evaluate_expression(expr: str) -> Dict[str, Any]:
         expr += ")" * (open_brackets - close_brackets)
 
     try:
-        result = safe_eval(expr)
+        result = safe_eval(expr, mode=mode)
         if isinstance(result, float):
             result = round(result, 10)
             if result == int(result):

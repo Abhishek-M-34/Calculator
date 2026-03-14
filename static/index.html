@@ -297,6 +297,38 @@
       width: 100%;
     }
 
+    .sci-toolbar {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-bottom: 12px;
+      padding: 0 4px;
+    }
+
+    .unit-toggle {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .unit-btn {
+      padding: 4px 12px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--muted);
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      transition: var(--transition);
+    }
+
+    .unit-btn.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
     /* Keep scientific keypad buttons consistent with standard mode */
     .sci-group.keypad button {
       aspect-ratio: 1;
@@ -581,6 +613,12 @@
       </div>
 
       <div class="pad hidden" id="padScientific">
+        <div class="sci-toolbar">
+          <div class="unit-toggle">
+            <button class="unit-btn active" id="unitDeg">DEG</button>
+            <button class="unit-btn" id="unitRad">RAD</button>
+          </div>
+        </div>
         <div class="sci-group functions">
           <button class="sci" data-value="sin(">sin</button>
           <button class="sci" data-value="cos(">cos</button>

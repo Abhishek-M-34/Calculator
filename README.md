@@ -16,8 +16,8 @@ A modern, high-performance calculator featuring standard calculations, scientifi
 ## ✨ Features
 
 -   **Dual Modes:** Seamlessly switch between a local **Desktop App** and a **Web API**.
+-   **📐 Scientific Precision:** Full support for trigonometry (with a **DEG/RAD** toggle), logarithms, and power functions.
 -   **🤖 AI Math Assistant:** Ask complex questions in plain English (e.g., "What's an 18% tip on a ₹850 bill?").
--   **📐 Scientific Logic:** Full support for trigonometry, logarithms, and power functions.
 -   **📜 Smart History:** Persistent session history with one-click recall of previous results.
 -   **⌨ Keyboard Support:** Full Numpad and operator support for lightning-fast calculations.
 -   **🎨 Glassmorphism Design:** Modern, eye-catching UI with a premium dark-theme palette.
