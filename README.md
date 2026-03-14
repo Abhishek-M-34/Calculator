@@ -16,16 +16,6 @@ A modern, high-performance calculator featuring standard calculations, scientifi
 
 ---
 
-## 📈 Project Evolution
-
-This project has grown through three distinct stages of development, reflecting a journey from classic GUI design to modern full-stack web architecture:
-
-1.  **Phase 1: The Foundation (Tkinter)** - Started as a basic desktop app using Python's built-in `tkinter` to establish the core math logic.
-2.  **Phase 2: Modernization (CustomTkinter)** - Refactored the UI with `CustomTkinter` for a premium dark-mode look and integrated **Groq AI (Llama-3.3)** to enable natural language calculations.
-3.  **Phase 3: The Cloud (FastAPI + Web)** - Extracted the logic into a shared core to power a high-performance **FastAPI web app**, making the tool accessible in any browser and ready for **Hugging Face Spaces**.
-
-
----
 
 ## 📈 Project Evolution
 
