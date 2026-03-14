@@ -44,6 +44,17 @@ const formatHistoryLabel = () => {
 
 const updateDisplay = () => {
   exprDisplay.textContent = state.expr || '';
+  
+  // Dynamic font scaling for result
+  const len = state.result.length;
+  let fontSize = window.innerWidth < 480 ? '2.5rem' : '3rem';
+  
+  if (len > 8) fontSize = window.innerWidth < 480 ? '2rem' : '2.5rem';
+  if (len > 12) fontSize = window.innerWidth < 480 ? '1.5rem' : '2rem';
+  if (len > 16) fontSize = window.innerWidth < 480 ? '1.2rem' : '1.5rem';
+  if (len > 20) fontSize = '1rem';
+
+  resultDisplay.style.fontSize = fontSize;
   resultDisplay.textContent = state.result;
   historyBtn.textContent = formatHistoryLabel();
 };
