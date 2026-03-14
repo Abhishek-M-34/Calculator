@@ -271,12 +271,7 @@ const switchMode = (mode) => {
   state.mode = mode;
   tabs.forEach((tab) => tab.classList.toggle('active', tab.dataset.mode === mode));
 
-  // Force show/hide by setting display explicitly, so CSS can't override it.
-  padStandard.style.display = mode === 'standard' ? 'grid' : 'none';
-  padScientific.style.display = mode === 'scientific' ? 'grid' : 'none';
-  aiPanel.style.display = mode === 'ai' ? 'grid' : 'none';
-
-  // Ensure the calculator pads and AI panel are not visible when not in their mode
+  // Use classes instead of inline styles so CSS can handle layout (e.g. flex on desktop)
   padStandard.classList.toggle('visible', mode === 'standard');
   padScientific.classList.toggle('visible', mode === 'scientific');
   aiPanel.classList.toggle('visible', mode === 'ai');
