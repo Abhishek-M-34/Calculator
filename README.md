@@ -1,3 +1,12 @@
+---
+title: Smart Calculator
+emoji: 🧮
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+pinned: false
+---
+
 # ✦ Smart Calculator: Desktop & Web (Groq AI Powered)
 
 A modern, high-performance calculator featuring standard calculations, scientific functions, and a nature-language AI assistant powered by **Llama-3.3-70B** via Groq. Designed with a premium dark-mode aesthetic for both Desktop (CustomTkinter) and Web (FastAPI).
