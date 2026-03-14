@@ -10,7 +10,7 @@ Endpoints:
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, List, Dict
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
@@ -42,6 +42,7 @@ class CalcRequest(BaseModel):
 class AiRequest(BaseModel):
     question: str
     api_key: Optional[str] = None
+    history: Optional[List[Dict[str, str]]] = None
 
 
 @app.post("/api/calc")
@@ -55,6 +56,6 @@ def calc(req: CalcRequest):
 @app.post("/api/ai")
 def ai(req: AiRequest):
     try:
-        return groq_math_query(req.question, api_key=req.api_key)
+        return groq_math_query(req.question, api_key=req.api_key, history=req.history)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))

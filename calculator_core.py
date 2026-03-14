@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 # ── Groq SDK (optional) ───────────────────────────────────────────────────────
 GROQ_IMPORT_ERROR = None
@@ -87,15 +87,12 @@ def evaluate_expression(expr: str, mode: str = 'deg') -> Dict[str, Any]:
         return {"error": f"Syntax error: {str(exc)}"}
 
 
-def groq_math_query(question: str, api_key: Optional[str] = None) -> Dict[str, Any]:
-    """Ask Groq a math question and return the response.
-
-    The API key may be provided explicitly, or by setting the
-    `GROQ_API_KEY` environment variable.
-
-    If the Groq SDK is not installed, we return a friendly message rather than
-    raising an exception so the UI can show a helpful note.
-    """
+def groq_math_query(
+    question: str, 
+    api_key: Optional[str] = None, 
+    history: Optional[List[Dict[str, str]]] = None
+) -> Dict[str, Any]:
+    """Ask Groq a math question and return the response with memory support."""
 
     if not GROQ_AVAILABLE:
         return {
@@ -114,18 +111,22 @@ def groq_math_query(question: str, api_key: Optional[str] = None) -> Dict[str, A
     client = Groq(api_key=api_key)
 
     SYSTEM = (
-        "You are a concise math assistant embedded in a calculator app. "
-        "When the user asks a math or calculation question, show the result clearly. "
-        "If applicable, also show the formula or steps briefly. "
-        "Keep answers short (≤6 lines). Use plain text, no markdown headers."
+        "You are an expert mathematician with advanced logical thinking and problem-solving skills. "
+        "When users ask questions, provide precise, logically structured answers. "
+        "Use formal mathematical notation and step-by-step reasoning where appropriate. "
+        "Be concise but thorough. Focus on providing the most accurate and elegant solution possible. "
+        "Keep answers short (≤6 lines). Use plain text (no markdown headers)."
     )
+
+    # Build message list
+    messages = [{"role": "system", "content": SYSTEM}]
+    if history:
+        messages.extend(history)
+    messages.append({"role": "user", "content": question})
 
     raw_resp = client.chat.completions.with_raw_response.create(
         model="llama-3.3-70b-versatile",
-        messages=[
-            {"role": "system", "content": SYSTEM},
-            {"role": "user", "content": question},
-        ],
+        messages=messages,
         max_tokens=400,
         temperature=0.3,
     )

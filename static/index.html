@@ -466,10 +466,37 @@
       border: 1px solid var(--border);
     }
 
+    .ai-header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .ai-reset-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: var(--transition);
+      font-weight: 600;
+    }
+    
+    .ai-reset-btn:hover {
+      background: rgba(248, 113, 113, 0.1);
+      color: #f87171;
+      border-color: rgba(248, 113, 113, 0.2);
+    }
+
     .ai-modes {
       display: flex;
       gap: 8px;
-      margin-bottom: 12px;
     }
 
     .ai-mode {
@@ -779,9 +806,14 @@
 
       <div class="ai-panel hidden" id="aiPanel">
         <div class="ai-header">
-          <div class="ai-modes">
-            <button type="button" id="modeBackend" class="ai-mode active">Backend</button>
-            <button type="button" id="modeKey" class="ai-mode">Own API</button>
+          <div class="ai-header-top">
+            <div class="ai-modes">
+              <button type="button" id="modeBackend" class="ai-mode active">Backend</button>
+              <button type="button" id="modeKey" class="ai-mode">Own API</button>
+            </div>
+            <button type="button" id="aiResetBtn" class="ai-reset-btn" data-hint="Clear entire chat history">
+              <i>↺</i> Reset Chat
+            </button>
           </div>
 
           <div class="ai-status" id="aiStatus">

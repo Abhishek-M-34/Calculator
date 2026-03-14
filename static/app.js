@@ -40,6 +40,7 @@ const state = {
   apiKey: '',
   remaining: null,
   units: 'deg', // deg | rad
+  aiHistory: [], // Array of {role, content}
 };
 
 const formatHistoryLabel = () => {
@@ -318,6 +319,7 @@ const askAi = async () => {
 
   setBusy(true);
   addAiMessage('user', question);
+  questionInput.value = ''; // Clear textarea after sending
 
   try {
     let data;
@@ -325,10 +327,11 @@ const askAi = async () => {
 
     if (state.aiMode === 'key') {
       const SYSTEM =
-        "You are a concise math assistant embedded in a calculator app. " +
-        "When the user asks a math or calculation question, show the result clearly. " +
-        "If applicable, also show the formula or steps briefly. " +
-        "Keep answers short (≤6 lines). Use plain text, no markdown headers.";
+        "You are an expert mathematician with advanced logical thinking and problem-solving skills. " +
+        "When users ask questions, provide precise, logically structured answers. " +
+        "Use formal mathematical notation and step-by-step reasoning where appropriate. " +
+        "Be concise but thorough. Focus on providing the most accurate and elegant solution possible. " +
+        "Keep answers short (≤6 lines). Use plain text (no markdown headers).";
 
       const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
@@ -340,6 +343,7 @@ const askAi = async () => {
           model: "llama-3.3-70b-versatile",
           messages: [
             { role: "system", content: SYSTEM },
+            ...state.aiHistory,
             { role: "user", content: question },
           ],
           max_tokens: 400,
@@ -360,8 +364,10 @@ const askAi = async () => {
 
       data.answer = data.choices?.[0]?.message?.content?.trim() ?? "(no response)";
     } else {
-      const payload = { question };
-      const backendData = await jsonRequest("/api/ai", payload);
+      const backendData = await jsonRequest("/api/ai", {
+        question,
+        history: state.aiHistory,
+      });
       data = backendData;
       remaining = backendData.remaining_requests ?? backendData.remaining ?? null;
     }
@@ -377,6 +383,15 @@ const askAi = async () => {
     });
 
     addAiMessage('bot', data.answer);
+    
+    // Update memory
+    state.aiHistory.push({ role: 'user', content: question });
+    state.aiHistory.push({ role: 'assistant', content: data.answer });
+    
+    // Limit history length to avoid huge payloads (keep last 10 messages)
+    if (state.aiHistory.length > 10) {
+       state.aiHistory = state.aiHistory.slice(-10);
+    }
   } catch (err) {
     addAiMessage('bot', `Error: ${err.message}`);
     setAiStatus({
@@ -433,6 +448,14 @@ const init = () => {
 
   unitDegBtn.addEventListener('click', () => setUnits('deg'));
   unitRadBtn.addEventListener('click', () => setUnits('rad'));
+
+  const resetAiBtn = $('aiResetBtn');
+  const resetAiChat = () => {
+    state.aiHistory = [];
+    aiChat.innerHTML = '';
+    updateHint('AI Chat has been reset.');
+  };
+  resetAiBtn.addEventListener('click', resetAiChat);
 
   document.addEventListener('keydown', (event) => {
     // Ignore when typing in AI input fields

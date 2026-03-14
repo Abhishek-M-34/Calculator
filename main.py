@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List, Dict
 from dotenv import load_dotenv
 
 # Import the core logic
@@ -28,6 +28,7 @@ class CalcRequest(BaseModel):
 class AiRequest(BaseModel):
     question: str
     api_key: Optional[str] = None
+    history: Optional[List[Dict[str, str]]] = None
 
 @app.post("/api/calc")
 def calc(req: CalcRequest):
@@ -40,7 +41,7 @@ def calc(req: CalcRequest):
 def ai(req: AiRequest):
     try:
         # On HF Spaces, if user doesn't provide a key, it will use GROQ_API_KEY from Secrets
-        return groq_math_query(req.question, api_key=req.api_key)
+        return groq_math_query(req.question, api_key=req.api_key, history=req.history)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 
