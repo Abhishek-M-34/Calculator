@@ -14,6 +14,11 @@ const aiStatusDot = $('aiStatusDot');
 const aiStatusText = $('aiStatusText');
 const aiRemaining = $('aiRemaining');
 const aiChat = $('aiChat');
+const hintText = $('hintText');
+
+const updateHint = (text) => {
+  hintText.textContent = text || 'Hover or click a key to see what it does.';
+};
 
 const questionInput = $('question');
 const aiBtn = $('aiBtn');
@@ -399,6 +404,17 @@ const init = () => {
 
   tabs.forEach((tab) => {
     tab.addEventListener('click', () => switchMode(tab.dataset.mode));
+  });
+
+  // Hint bar logic
+  [padStandard, padScientific].forEach(pad => {
+    pad.addEventListener('mouseover', (e) => {
+      const btn = e.target.closest('button');
+      if (btn && btn.dataset.hint) updateHint(btn.dataset.hint);
+    });
+    pad.addEventListener('mouseout', (e) => {
+      updateHint();
+    });
   });
 
   aiBtn.addEventListener('click', askAi);
